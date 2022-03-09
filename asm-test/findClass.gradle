@@ -1,0 +1,138 @@
+import groovy.transform.Field
+
+//TODO:声明编译该gradle后，再处理该代码块。
+//@Field String DName;
+////获得: debug/release
+//@Field String variantName
+////首字母大写 Debug/Release
+//@Field String capitalizeName
+
+ext {
+    DName = ""
+    variantName = ""
+    capitalizeName = ""
+}
+
+getProject().afterEvaluate({
+    //TODO:目标是所有variants模块
+    android.getApplicationVariants().all {
+        variant ->
+
+            DName = variant.getDirName()
+            variantName = variant.name
+            capitalizeName = variantName.capitalize()
+
+            System.out.println("afterEvaluate... dirName=" + variant.getDirName() + " variantName=" +
+                    variantName + " capitalizeName=" + capitalizeName)
+
+            try {
+                referHackWhenInit()
+            } catch (Exception e) {
+                e.printStackTrace()
+            }
+    }
+})
+
+void referHackWhenInit() throws IOException {
+    System.out.println("referHackWhenInit...")
+
+    Task dexTask =
+            project.getTasks().findByName("dexBuilder" + capitalizeName);
+
+    //TODO:处理dexTask任务前处理。
+    dexTask.doFirst {
+        System.out.println("dexTask.doFirst...")
+
+        //TODO:先获取到class文件，这里有可能是jar，也有可能是class
+        // ，如果是jar，则要解析出class。
+        FileCollection files = dexTask.getInputs().getFiles()
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                findAllFileInDir(file)
+            } else {
+                doProcess(file)
+            }
+
+        }
+    }
+}
+
+/**
+ * 处理class或jar。
+ *
+ * @param file
+ */
+void doProcess(File file) {
+    String filePath = file.getAbsolutePath()
+
+//    System.out.println("filePath=" + filePath)
+
+    if (filePath.endsWith(".jar")) {
+        //TODO:通常依赖库都是以jar的方式存在。
+        // 如果能确定只需要插桩自己的代码，则无需理会。
+//                processJar(file)
+//        System.out.println("filePath=" + filePath)
+
+    } else if (filePath.endsWith(".class")) {
+        //TODO：项目中的代码通常是class。
+        processClass(file);
+    }
+}
+
+/**
+ * 处理class
+ *
+ */
+void processClass(File file) {
+    System.out.println("processClass=" + file.getAbsolutePath())
+}
+
+/**
+ * 循环遍历该目录下所有文件。并执行处理。
+ *
+ */
+void findAllFileInDir(File file) {
+//    System.out.println("findAllFileInDir=" + file.getAbsoluteFile())
+
+    //TODO:如果不是文件夹，则直接调用处理。
+    if (file.isFile()) {
+        doProcess(file);
+        return;
+    }
+
+    //TODO:如果是文件夹，那么遍历文件夹中的文件。
+    File[] fs = file.listFiles();
+    for (File f : fs) {
+        if (file.isDirectory()) {
+            findAllFileInDir(f)
+        } else {
+            doProcess(f);
+        }
+    }
+}
+
+/**
+ * 处理class文件
+ * @param dirName
+ * @param file
+ */
+//static void doProcess(String dirName,File file) {
+//    System.out.println("filePath=" + file.getAbsoluteFile())
+//
+//    String filePath = file.getAbsolutePath();
+//    //依赖的库会以jar包形式传过来，对依赖库也执行插桩
+//    if (filePath.endsWith(".jar")) {
+////        processJar(file);
+//
+//    } else if (filePath.endsWith(".class")) {
+//        //主要是我们自己写的app模块中的代码
+////        processClass(dirName, file);
+//    }
+//
+//}
+
+static boolean isAndroidClass(String filePath) {
+    return filePath.startsWith("android") ||
+            filePath.startsWith("androidx");
+}

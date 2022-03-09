@@ -1,0 +1,6 @@
+include ':annotation'
+include ':annotationpro'
+include ':app'
+rootProject.name = "TestAnnotation"
+include ':asm-test'
+include ':spi'
